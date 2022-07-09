@@ -8,9 +8,9 @@
 from typing import List, Any
 import random
 import numpy as np
-import string
-import gurobipy as gp
-from gurobipy import GRB
+import pandas as pd
+#import gurobipy as gp
+#from gurobipy import GRB
 import scipy.sparse as sp
 from scipy.optimize import linprog
 
@@ -21,6 +21,7 @@ from scipy.optimize import linprog
 myPref = list()
 allPref = list()
 alt = list()
+debugMode = True
 
 #############################################
 ## METHOD: generate ordered list of alternatives
@@ -212,91 +213,120 @@ def findBestManipulation(myPref, M, LC1, LC2, uType):
     M5[0, 1] = M5[0, 1] - 2
     M5[1, 0] = M5[1, 0] + 2
     dist5 = 3
-
+    
+    mList = [M, M1, M2, M3, M4, M5]
+    distList = [0, dist1, dist2, dist3, dist4, dist5]
+    lieList = [0,1,1,1,1,1]
     ## Compute ML p and check whether the manipulation is beneficial
 
     # compute p
-    p = maximalLottery(M)
-    p1 = maximalLottery(M1)
-    p2 = maximalLottery(M2)
-    p3 = maximalLottery(M3)
-    p4 = maximalLottery(M4)
-    p5 = maximalLottery(M5)
+    pList = []
+    for M in mList:
+        p = maximalLottery(M)
+        pList.append(p)
 
-    print('***** True profile: *****')
-    print('{} with ML {}'.format(M, p))
-    print('***** Man1: *****')
-    print('{} with ML {}'.format(M1, p1))
-    print('***** Man2: *****')
-    print('{} with ML {}'.format(M2, p2))
-    print('***** Man3: *****')
-    print('{} with ML {}'.format(M3, p3))
-    print('***** Man4: *****')
-    print('{} with ML {}'.format(M4, p4))
-    print('***** MAn5: *****')
-    print('{} with ML {}'.format(M5, p5))
+    # compute expectedUtility for all 5 possible manipulations
+    eUList = []
+    for i in range(0, len(mList)):
+        eU = expectedUtility(pList[i], myPref, alt, lieList[i], distList[i], LC1, LC2, uType)
+        eUList.append(eU)
+    print("** uTrue is {} with p = {} and myPref {}".format(eUList[0], pList[0], myPref))
 
-    # compute expectedUtility
-    uTrue = expectedUtility(p, myPref, alt, 0, 0, LC1, LC2, uType)
-    print("** uTrue is {} with p = {} and myPref {}".format(uTrue, p, myPref))
-    expU1 = expectedUtility(p1, myPref, alt, 1, dist1, LC1, LC2, uType)
-    expU2 = expectedUtility(p2, myPref, alt, 1, dist2, LC1, LC2, uType)
-    expU3 = expectedUtility(p3, myPref, alt, 1, dist3, LC1, LC2, uType)
-    expU4 = expectedUtility(p4, myPref, alt, 1, dist4, LC1, LC2, uType)
-    expU5 = expectedUtility(p5, myPref, alt, 1, dist5, LC1, LC2, uType)
+
+    # uTrue = expectedUtility(p, myPref, alt, 0, 0, LC1, LC2, uType)
+    # expU1 = expectedUtility(p1, myPref, alt, 1, dist1, LC1, LC2, uType)
+    # expU2 = expectedUtility(p2, myPref, alt, 1, dist2, LC1, LC2, uType)
+    # expU3 = expectedUtility(p3, myPref, alt, 1, dist3, LC1, LC2, uType)
+    # expU4 = expectedUtility(p4, myPref, alt, 1, dist4, LC1, LC2, uType)
+    # expU5 = expectedUtility(p5, myPref, alt, 1, dist5, LC1, LC2, uType)
 
     # initialize
-    better1 = better2 = better3 = better4 = better5 = 0
-    rbetter1 = rbetter2 = rbetter3 = rbetter4 = rbetter5 = 0
+    # better1 = better2 = better3 = better4 = better5 = 0
+    # rbetter1 = rbetter2 = rbetter3 = rbetter4 = rbetter5 = 0
+
+    betterList = [0,0,0,0,0]
+    rbetterList = [0,0,0,0,0]
 
     # check: beneficial?
-    if expU1 > uTrue:
-        better1 = expU1 - uTrue
-        rbetter1 = expU1 / uTrue
-        print("***** Success: M1 beneficial *****")
-        print(better1)
-    if expU2 > uTrue:
-        better2 = expU2 - uTrue
-        rbetter2 = expU2 / uTrue
-        print("***** Success: M2 beneficial *****")
-        print(better2)
-    if expU3 > uTrue:
-        better3 = expU3 - uTrue
-        rbetter3 = expU3 / uTrue
-        print("***** Success: M3 beneficial *****")
-        print(better3)
-    if expU4 > uTrue:
-        better4 = expU4 - uTrue
-        rbetter4 = expU4 / uTrue
-        print("***** Success: M4 beneficial *****")
-        print(better4)
-    if expU5 > uTrue:
-        better5 = expU5 - uTrue
-        rbetter5 = expU5 / uTrue
-        print("***** Success: M5 beneficial *****")
-        print(better5)
+    for i in range(1, len(eUList)):
+        if eUList[i] > eUList[0]:
+            betterList[i] = eUList[i] - eUList[0]
+            rbetterList[i] = eUList[i] / eUList[0]
+        else:
+            betterList[i] = 0
+            rbetterList[i] = 0
+
+    # print indices of entries in betterList and rbetterlist which are not 0
+    successes = []
+    for i in range(1, len(betterList)):
+        if not betterList[i] == 0:
+            successes.append(i)
+    
+    successes2 = [i for i, e in enumerate(a) if e != 0]
+    if not successes == successes2:
+        print("ATTENTION ONE OF THE CALCULATIONS IS WRONG")
+
+    if debugMode:
+        print("Successes: {}".format(successes))
+
+
+
+
+    # if expU1 > uTrue:
+    #     better1 = expU1 - uTrue
+    #     rbetter1 = expU1 / uTrue
+    #     print("***** Success: M1 beneficial *****")
+    #     print(better1)
+    # if expU2 > uTrue:
+    #     better2 = expU2 - uTrue
+    #     rbetter2 = expU2 / uTrue
+    #     print("***** Success: M2 beneficial *****")
+    #     print(better2)
+    # if expU3 > uTrue:
+    #     better3 = expU3 - uTrue
+    #     rbetter3 = expU3 / uTrue
+    #     print("***** Success: M3 beneficial *****")
+    #     print(better3)
+    # if expU4 > uTrue:
+    #     better4 = expU4 - uTrue
+    #     rbetter4 = expU4 / uTrue
+    #     print("***** Success: M4 beneficial *****")
+    #     print(better4)
+    # if expU5 > uTrue:
+    #     better5 = expU5 - uTrue
+    #     rbetter5 = expU5 / uTrue
+    #     print("***** Success: M5 beneficial *****")
+    #     print(better5)
 
     # fill lists
-    betterList = [better1, better2, better3, better4, better5]
-    rbetterList = [rbetter1, rbetter2, rbetter3, rbetter4, rbetter5]
-    expUList = [expU1, expU2, expU3, expU4, expU5]
+    #betterList = [better1, better2, better3, better4, better5]
+    #rbetterList = [rbetter1, rbetter2, rbetter3, rbetter4, rbetter5]
+    #expUList = [expU1, expU2, expU3, expU4, expU5]
 
     # check: what is highest absolute gain (difference) in utility?
     diffUtility = max(betterList)
     if diffUtility is not 0:
         # check: which manipulation leads to highest gain?
-        maxMan = betterList.index(diffUtility) + 1
+        maxMan = betterList.index(diffUtility)
         # save abs. & rel utility gain
-        absUtility = expUList[maxMan - 1]
-        relUtility = rbetterList[maxMan - 1]
+        absUtility = eUList[maxMan]
+        relUtility = rbetterList[maxMan]
     else:
         maxMan = 0
         absUtility = 0
         relUtility = 0
 
+    if debugMode:
+
+        print('***** True profile: *****')
+        print('{} with ML {}'.format(mList[0], pList[0]))
+        for i in range(1, len(mList)):
+            print('***** Man{}: *****'.format(i))
+            print('{} with ML {}'.format(mList[i], pList[i]))
+
     print('**************************************************')
     print("Highest manipulation is No. {}".format(maxMan))
-    print('***** utility true:       {}'.format(uTrue))
+    print('***** utility true:       {}'.format(eUList[0]))
     print('***** absolute utility:   {}'.format(absUtility))
     print('***** utility difference: {}'.format(diffUtility))
     print('***** relative utility:   {}'.format(relUtility))
@@ -307,126 +337,126 @@ def findBestManipulation(myPref, M, LC1, LC2, uType):
 #############################################
 ## METHOD: OLD - Find most beneficial manipulation
 
-def findBestManipulationOLD(myPref, M):
+# def findBestManipulationOLD(myPref, M):
 
-    M = np.array(M)
-    alt = altList(len(myPref))
-    myPrefTemp = myPref.copy()
+#     M = np.array(M)
+#     alt = altList(len(myPref))
+#     myPrefTemp = myPref.copy()
 
-    # Compute majority matrix & prefProfile of all 5 possible manipulations
-    #1 Man: abc - acb
-    M1 = M.copy()
-    m1 = swap(myPrefTemp, 1, 2)
-    M1[1, 2] = M1[1, 2] - 2
-    M1[2, 1] = M1[2, 1] + 2
+#     # Compute majority matrix & prefProfile of all 5 possible manipulations
+#     #1 Man: abc - acb
+#     M1 = M.copy()
+#     m1 = swap(myPrefTemp, 1, 2)
+#     M1[1, 2] = M1[1, 2] - 2
+#     M1[2, 1] = M1[2, 1] + 2
 
-    #2 Man: abc - bac
-    M2 = M.copy()
-    m2 = swap(myPrefTemp, 0, 1)
-    M2[0, 1] = M2[0, 1] - 2
-    M2[1, 0] = M2[1, 0] + 2
+#     #2 Man: abc - bac
+#     M2 = M.copy()
+#     m2 = swap(myPrefTemp, 0, 1)
+#     M2[0, 1] = M2[0, 1] - 2
+#     M2[1, 0] = M2[1, 0] + 2
 
-    #3 Man: abc - bca
-    M3 = M2.copy()
-    m3 = swap(m2, 1, 2)
-    M3[0, 2] = M3[0, 2] - 2
-    M3[2, 0] = M3[2, 0] + 2
+#     #3 Man: abc - bca
+#     M3 = M2.copy()
+#     m3 = swap(m2, 1, 2)
+#     M3[0, 2] = M3[0, 2] - 2
+#     M3[2, 0] = M3[2, 0] + 2
 
-    #4 Man: abc - cab
-    M4 = M1.copy()
-    m4 = swap(m1, 0, 1)
-    M4[0, 2] = M4[0, 2] - 2
-    M4[2, 0] = M4[2, 0] + 2
+#     #4 Man: abc - cab
+#     M4 = M1.copy()
+#     m4 = swap(m1, 0, 1)
+#     M4[0, 2] = M4[0, 2] - 2
+#     M4[2, 0] = M4[2, 0] + 2
 
-    #5 Man: abc - cba
-    M5 = M4.copy()
-    m5 = swap(m4, 1, 2)
-    M5[0, 1] = M5[0, 1] - 2
-    M5[1, 0] = M5[1, 0] + 2
+#     #5 Man: abc - cba
+#     M5 = M4.copy()
+#     m5 = swap(m4, 1, 2)
+#     M5[0, 1] = M5[0, 1] - 2
+#     M5[1, 0] = M5[1, 0] + 2
 
-    ## Compute ML p and check whether the manipulation is beneficial
+#     ## Compute ML p and check whether the manipulation is beneficial
 
-    # compute p
-    p = maximalLottery(M)
-    p1 = maximalLottery(M1)
-    p2 = maximalLottery(M2)
-    p3 = maximalLottery(M3)
-    p4 = maximalLottery(M4)
-    p5 = maximalLottery(M5)
+#     # compute p
+#     p = maximalLottery(M)
+#     p1 = maximalLottery(M1)
+#     p2 = maximalLottery(M2)
+#     p3 = maximalLottery(M3)
+#     p4 = maximalLottery(M4)
+#     p5 = maximalLottery(M5)
 
-    print('***** True profile: *****')
-    print('{} with ML {}'.format(M, p))
-    print('***** Man1: *****')
-    print('{} with ML {}'.format(M1, p1))
-    print('***** Man2: *****')
-    print('{} with ML {}'.format(M2, p2))
-    print('***** Man3: *****')
-    print('{} with ML {}'.format(M3, p3))
-    print('***** Man4: *****')
-    print('{} with ML {}'.format(M4, p4))
-    print('***** MAn5: *****')
-    print('{} with ML {}'.format(M5, p5))
+#     print('***** True profile: *****')
+#     print('{} with ML {}'.format(M, p))
+#     print('***** Man1: *****')
+#     print('{} with ML {}'.format(M1, p1))
+#     print('***** Man2: *****')
+#     print('{} with ML {}'.format(M2, p2))
+#     print('***** Man3: *****')
+#     print('{} with ML {}'.format(M3, p3))
+#     print('***** Man4: *****')
+#     print('{} with ML {}'.format(M4, p4))
+#     print('***** MAn5: *****')
+#     print('{} with ML {}'.format(M5, p5))
 
-    # check: beneficial?
-    uTrue = expectedUtility(p, myPref, alt)
-    print("** uTrue is {} with p = {} and myPref {}".format(uTrue, p, myPref))
-    expU1 = expectedUtility(p1, myPref, alt)
-    expU2 = expectedUtility(p2, myPref, alt)
-    expU3 = expectedUtility(p3, myPref, alt)
-    expU4 = expectedUtility(p4, myPref, alt)
-    expU5 = expectedUtility(p5, myPref, alt)
+#     # check: beneficial?
+#     uTrue = expectedUtility(p, myPref, alt)
+#     print("** uTrue is {} with p = {} and myPref {}".format(uTrue, p, myPref))
+#     expU1 = expectedUtility(p1, myPref, alt)
+#     expU2 = expectedUtility(p2, myPref, alt)
+#     expU3 = expectedUtility(p3, myPref, alt)
+#     expU4 = expectedUtility(p4, myPref, alt)
+#     expU5 = expectedUtility(p5, myPref, alt)
 
-    better1 = better2 = better3 = better4 = better5 = 0
-    rbetter1 = rbetter2 = rbetter3 = rbetter4 = rbetter5 = 0
+#     better1 = better2 = better3 = better4 = better5 = 0
+#     rbetter1 = rbetter2 = rbetter3 = rbetter4 = rbetter5 = 0
 
-    if expU1 > uTrue:
-        better1 = expU1 - uTrue
-        rbetter1 = expU1 / uTrue
-        print("***** Success: M1 beneficial *****")
-        print(better1)
-    if expU2 > uTrue:
-        better2 = expU2 - uTrue
-        rbetter2 = expU2 / uTrue
-        print("***** Success: M2 beneficial *****")
-        print(better2)
-    if expU3 > uTrue:
-        better3 = expU3 - uTrue
-        rbetter3 = expU3 / uTrue
-        print("***** Success: M3 beneficial *****")
-        print(better3)
-    if expU4 > uTrue:
-        better4 = expU4 - uTrue
-        rbetter4 = expU4 / uTrue
-        print("***** Success: M4 beneficial *****")
-        print(better4)
-    if expU5 > uTrue:
-        better5 = expU5 - uTrue
-        rbetter5 = expU5 / uTrue
-        print("***** Success: M5 beneficial *****")
-        print(better5)
+#     if expU1 > uTrue:
+#         better1 = expU1 - uTrue
+#         rbetter1 = expU1 / uTrue
+#         print("***** Success: M1 beneficial *****")
+#         print(better1)
+#     if expU2 > uTrue:
+#         better2 = expU2 - uTrue
+#         rbetter2 = expU2 / uTrue
+#         print("***** Success: M2 beneficial *****")
+#         print(better2)
+#     if expU3 > uTrue:
+#         better3 = expU3 - uTrue
+#         rbetter3 = expU3 / uTrue
+#         print("***** Success: M3 beneficial *****")
+#         print(better3)
+#     if expU4 > uTrue:
+#         better4 = expU4 - uTrue
+#         rbetter4 = expU4 / uTrue
+#         print("***** Success: M4 beneficial *****")
+#         print(better4)
+#     if expU5 > uTrue:
+#         better5 = expU5 - uTrue
+#         rbetter5 = expU5 / uTrue
+#         print("***** Success: M5 beneficial *****")
+#         print(better5)
 
-    betterList = [better1, better2, better3, better4, better5]
-    rbetterList = [rbetter1, rbetter2, rbetter3, rbetter4, rbetter5]
-    expUList = [expU1, expU2, expU3, expU4, expU5]
-    diffUtility = max(betterList)
-    if diffUtility is not 0:
-        maxMan = betterList.index(diffUtility) + 1
-        absUtility = expUList[maxMan - 1]
-        relUtility = rbetterList[maxMan - 1]
-    else:
-        maxMan = 0
-        absUtility = 0
-        relUtility = 0
+#     betterList = [better1, better2, better3, better4, better5]
+#     rbetterList = [rbetter1, rbetter2, rbetter3, rbetter4, rbetter5]
+#     expUList = [expU1, expU2, expU3, expU4, expU5]
+#     diffUtility = max(betterList)
+#     if diffUtility is not 0:
+#         maxMan = betterList.index(diffUtility) + 1
+#         absUtility = expUList[maxMan - 1]
+#         relUtility = rbetterList[maxMan - 1]
+#     else:
+#         maxMan = 0
+#         absUtility = 0
+#         relUtility = 0
 
-    print('**************************************************')
-    print("Highest manipulation is No. {}".format(maxMan))
-    print('***** utility true:       {}'.format(uTrue))
-    print('***** absolute utility:   {}'.format(absUtility))
-    print('***** utility difference: {}'.format(diffUtility))
-    print('***** relative utility:   {}'.format(relUtility))
-    print('**************************************************')
+#     print('**************************************************')
+#     print("Highest manipulation is No. {}".format(maxMan))
+#     print('***** utility true:       {}'.format(uTrue))
+#     print('***** absolute utility:   {}'.format(absUtility))
+#     print('***** utility difference: {}'.format(diffUtility))
+#     print('***** relative utility:   {}'.format(relUtility))
+#     print('**************************************************')
 
-    return diffUtility
+#     return diffUtility
 
 ## Swap function
 def swap(list, pos1, pos2):
@@ -464,9 +494,6 @@ def simulationModel1(n, m, size):
         allPref = prefProfile(n, m, alt)
         myPref = allPref[0]
         M = majorityMatrix(allPref, alt)
-
-        for i in range(10):
-            diffLists[i].append
 
         # no LC1
         diff00 = findBestManipulation(myPref, M, 0, 0, 1)
@@ -538,11 +565,7 @@ def simulationModel1(n, m, size):
 
     print('')
     print('')
-    i = 0.0
-    diffLists[i]["LC"] =
-    for diffList in diffLists:
-        print('With LC = {}:: {}'.format(i, diffList))
-        i += 0.1
+
     print('With LC = 0.0:: {}'.format(diffList00))
     print('With LC = 0.1:: {}'.format(diffList01))
     print('With LC = 0.2:: {}'.format(diffList02))
@@ -875,9 +898,6 @@ def test2_casesHighestDiff():
     print('My true preferences: ')
     print(myPref)
     findBestManipulation(myPref, M16, 0.4, 0, 0)
-
-def print_info(nr, Name, M, myPref):
-
 
 def test2_bestManipulation():
 
