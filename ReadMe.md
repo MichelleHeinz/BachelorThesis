@@ -1,2 +1,2 @@
-# Welcome to this awesome Repo
-I was also here
+# Corresponding Repo to the Bachelor Thesis
+## Struture:
