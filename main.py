@@ -8,7 +8,7 @@
 from typing import List, Any
 import random
 import numpy as np
-import pandas as pd
+#import pandas as pd
 import scipy.sparse as sp
 from scipy.optimize import linprog
 import matplotlib.pyplot as plt
@@ -22,6 +22,18 @@ myPref = list()
 allPref = list()
 alt = list()
 debugMode = False
+
+#############################################
+# SETTING PLOTS
+#############################################
+
+sns.set_style('darkgrid') # darkgrid, white grid, dark, white and ticks
+plt.rc('axes', titlesize=18)     # fontsize of the axes title
+plt.rc('axes', labelsize=14)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=13)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=13)    # fontsize of the tick labels
+plt.rc('legend', fontsize=13)    # legend fontsize
+plt.rc('font', size=13)          # controls default text sizes
 
 #############################################
 ## METHOD: generate ordered list of alternatives
@@ -237,17 +249,6 @@ def findBestManipulation(myPref, M, LC1, LC2, uType):
         print("** uTrue is {} with p = {} and myPref {}".format(eUList[0], pList[0], myPref))
 
 
-    # uTrue = expectedUtility(p, myPref, alt, 0, 0, LC1, LC2, uType)
-    # expU1 = expectedUtility(p1, myPref, alt, 1, dist1, LC1, LC2, uType)
-    # expU2 = expectedUtility(p2, myPref, alt, 1, dist2, LC1, LC2, uType)
-    # expU3 = expectedUtility(p3, myPref, alt, 1, dist3, LC1, LC2, uType)
-    # expU4 = expectedUtility(p4, myPref, alt, 1, dist4, LC1, LC2, uType)
-    # expU5 = expectedUtility(p5, myPref, alt, 1, dist5, LC1, LC2, uType)
-
-    # initialize
-    # better1 = better2 = better3 = better4 = better5 = 0
-    # rbetter1 = rbetter2 = rbetter3 = rbetter4 = rbetter5 = 0
-
     betterList = [0,0,0,0,0,0]
     rbetterList = [0,0,0,0,0,0]
 
@@ -276,39 +277,6 @@ def findBestManipulation(myPref, M, LC1, LC2, uType):
     if debugMode:
         print("Successes: {}".format(successes))
 
-
-
-
-    # if expU1 > uTrue:
-    #     better1 = expU1 - uTrue
-    #     rbetter1 = expU1 / uTrue
-    #     print("***** Success: M1 beneficial *****")
-    #     print(better1)
-    # if expU2 > uTrue:
-    #     better2 = expU2 - uTrue
-    #     rbetter2 = expU2 / uTrue
-    #     print("***** Success: M2 beneficial *****")
-    #     print(better2)
-    # if expU3 > uTrue:
-    #     better3 = expU3 - uTrue
-    #     rbetter3 = expU3 / uTrue
-    #     print("***** Success: M3 beneficial *****")
-    #     print(better3)
-    # if expU4 > uTrue:
-    #     better4 = expU4 - uTrue
-    #     rbetter4 = expU4 / uTrue
-    #     print("***** Success: M4 beneficial *****")
-    #     print(better4)
-    # if expU5 > uTrue:
-    #     better5 = expU5 - uTrue
-    #     rbetter5 = expU5 / uTrue
-    #     print("***** Success: M5 beneficial *****")
-    #     print(better5)
-
-    # fill lists
-    #betterList = [better1, better2, better3, better4, better5]
-    #rbetterList = [rbetter1, rbetter2, rbetter3, rbetter4, rbetter5]
-    #expUList = [expU1, expU2, expU3, expU4, expU5]
 
     # check: what is highest absolute gain (difference) in utility?
     diffUtility = max(betterList)
@@ -487,7 +455,7 @@ def simulationModel1(n, m, size, lcDist):
     masterList = []
     # idea: sample for every fix lc (i + lcDist) size-many profiles
     i = 0
-    while i < 2.0:
+    while i < 3.0:
         masterList.append([])
         i += lcDist
 
@@ -515,35 +483,26 @@ def simulationModel1(n, m, size, lcDist):
     print(numberManList)
     print('')
 
+    return numberManList
 
-def simulationModel1vs2(n, m, size):
+
+def simulationModel1vs2(n, m, size, lcDist):
 
     alt = altList(m)
     # for each prefProfile save how beneficial the best manipulation compared to uTrue is
-    m1_diffList00 = list()
-    m1_diffList01 = list()
-    m1_diffList02 = list()
-    m1_diffList03 = list()
-    m1_diffList04 = list()
-    m1_diffList05 = list()
-    m1_diffList06 = list()
-    m1_diffList07 = list()
-    m1_diffList08 = list()
-    m1_diffList09 = list()
-    m1_diffList10 = list()
 
-    m2_diffList00 = list()
-    m2_diffList01 = list()
-    m2_diffList02 = list()
-    m2_diffList03 = list()
-    m2_diffList04 = list()
-    m2_diffList05 = list()
-    m2_diffList06 = list()
-    m2_diffList07 = list()
-    m2_diffList08 = list()
-    m2_diffList09 = list()
-    m2_diffList10 = list()
+    # create list of lists
+    m1_masterList = []
+    m2_masterList = []
+    # idea: sample for every fix lc (i + lcDist) size-many profiles
+    i = 0
+    while i < 3.0:
+        m1_masterList.append([])
+        m2_masterList.append([])
+        i += lcDist
 
+    print('***** Simulation for Model 1 & 2 *****')
+    print('Length of masterList: {}'.format(len(m1_masterList)))
 
     # create i times a new prefProfile
     for i in range(size):
@@ -551,196 +510,27 @@ def simulationModel1vs2(n, m, size):
         myPref = allPref[0]
         M = majorityMatrix(allPref, alt)
 
-        ## MODEL 1
-        # no LC1
-        diff00 = findBestManipulation(myPref, M, 0, 0, 1)
-        m1_diffList00.append(diff00)
+        for i in range(len(m1_masterList)):
+            m1_masterList[i].append(findBestManipulation(myPref, M, i * lcDist, 0, 1))
+            m2_masterList[i].append(findBestManipulation(myPref, M, 0, i * lcDist, 2))
 
-        # LC1 = 0.1
-        diff01 = findBestManipulation(myPref, M, 0.1, 0, 1)
-        m1_diffList01.append(diff01)
+    # loop over all lists and count nonzero elements
+    m1_numberManList = []
+    m2_numberManList = []
+    for i in range(len(m1_masterList)):
+        m1_numberManList.append(np.count_nonzero(m1_masterList[i]))
+        m2_numberManList.append(np.count_nonzero(m2_masterList[i]))
 
-        # LC1 = 0.2
-        diff02 = findBestManipulation(myPref, M, 0.2, 0, 1)
-        m1_diffList02.append(diff02)
-
-        # LC1 = 0.3
-        diff03 = findBestManipulation(myPref, M, 0.3, 0, 1)
-        m1_diffList03.append(diff03)
-
-        # LC1 = 0.4
-        diff04 = findBestManipulation(myPref, M, 0.4, 0, 1)
-        m1_diffList04.append(diff04)
-
-        # LC1 = 0.5
-        diff05 = findBestManipulation(myPref, M, 0.5, 0, 1)
-        m1_diffList05.append(diff05)
-
-        # LC1 = 0.6
-        diff06 = findBestManipulation(myPref, M, 0.6, 0, 1)
-        m1_diffList06.append(diff06)
-
-        # LC1 = 0.7
-        diff07 = findBestManipulation(myPref, M, 0.7, 0, 1)
-        m1_diffList07.append(diff07)
-
-        # LC1 = 0.8
-        diff08 = findBestManipulation(myPref, M, 0.8, 0, 1)
-        m1_diffList08.append(diff08)
-
-        # LC1 = 0.9
-        diff09 = findBestManipulation(myPref, M, 0.9, 0, 1)
-        m1_diffList09.append(diff09)
-
-        # LC1 = 1.0
-        diff10 = findBestManipulation(myPref, M, 1, 0, 1)
-        m1_diffList10.append(diff10)
-
-        ## MODEL 2
-        # no LC1
-        diff00 = findBestManipulation(myPref, M, 0, 0, 2)
-        m2_diffList00.append(diff00)
-
-        # LC1 = 0.1
-        diff01 = findBestManipulation(myPref, M, 0, 0.1, 2)
-        m2_diffList01.append(diff01)
-
-        # LC1 = 0.2
-        diff02 = findBestManipulation(myPref, M, 0, 0.2, 2)
-        m2_diffList02.append(diff02)
-
-        # LC1 = 0.3
-        diff02 = findBestManipulation(myPref, M, 0, 0.3, 2)
-        m2_diffList03.append(diff03)
-
-        # LC1 = 0.4
-        diff04 = findBestManipulation(myPref, M, 0, 0.4, 2)
-        m2_diffList04.append(diff04)
-
-        # LC1 = 0.5
-        diff05 = findBestManipulation(myPref, M, 0, 0.5, 2)
-        m2_diffList05.append(diff05)
-
-        # LC1 = 0.6
-        diff06 = findBestManipulation(myPref, M, 0, 0.6, 2)
-        m2_diffList06.append(diff06)
-
-        # LC1 = 0.7
-        diff07 = findBestManipulation(myPref, M, 0, 0.7, 2)
-        m2_diffList07.append(diff07)
-
-        # LC1 = 0.8
-        diff08 = findBestManipulation(myPref, M, 0, 0.8, 2)
-        m2_diffList08.append(diff08)
-
-        # LC1 = 0.9
-        diff09 = findBestManipulation(myPref, M, 0, 0.9, 2)
-        m2_diffList09.append(diff09)
-
-        # LC1 = 1.0
-        diff10 = findBestManipulation(myPref, M, 0, 1, 2)
-        m2_diffList10.append(diff10)
-
-    m1_diffArray00 = np.array(m1_diffList00)
-    m1_diffArray01 = np.array(m1_diffList01)
-    m1_diffArray02 = np.array(m1_diffList02)
-    m1_diffArray03 = np.array(m1_diffList03)
-    m1_diffArray04 = np.array(m1_diffList04)
-    m1_diffArray05 = np.array(m1_diffList05)
-    m1_diffArray06 = np.array(m1_diffList06)
-    m1_diffArray07 = np.array(m1_diffList07)
-    m1_diffArray08 = np.array(m1_diffList08)
-    m1_diffArray09 = np.array(m1_diffList09)
-    m1_diffArray10 = np.array(m1_diffList10)
-
-    m1_numMan00 = np.count_nonzero(m1_diffArray00)
-    m1_numMan01 = np.count_nonzero(m1_diffArray01)
-    m1_numMan02 = np.count_nonzero(m1_diffArray02)
-    m1_numMan03 = np.count_nonzero(m1_diffArray03)
-    m1_numMan04 = np.count_nonzero(m1_diffArray04)
-    m1_numMan05 = np.count_nonzero(m1_diffArray05)
-    m1_numMan06 = np.count_nonzero(m1_diffArray06)
-    m1_numMan07 = np.count_nonzero(m1_diffArray07)
-    m1_numMan08 = np.count_nonzero(m1_diffArray08)
-    m1_numMan09 = np.count_nonzero(m1_diffArray09)
-    m1_numMan10 = np.count_nonzero(m1_diffArray10)
-
-    m2_diffArray00 = np.array(m2_diffList00)
-    m2_diffArray01 = np.array(m2_diffList01)
-    m2_diffArray02 = np.array(m2_diffList02)
-    m2_diffArray03 = np.array(m2_diffList03)
-    m2_diffArray04 = np.array(m2_diffList04)
-    m2_diffArray05 = np.array(m2_diffList05)
-    m2_diffArray06 = np.array(m2_diffList06)
-    m2_diffArray07 = np.array(m2_diffList07)
-    m2_diffArray08 = np.array(m2_diffList08)
-    m2_diffArray09 = np.array(m2_diffList09)
-    m2_diffArray10 = np.array(m2_diffList10)
-
-    m2_numMan00 = np.count_nonzero(m2_diffArray00)
-    m2_numMan01 = np.count_nonzero(m2_diffArray01)
-    m2_numMan02 = np.count_nonzero(m2_diffArray02)
-    m2_numMan03 = np.count_nonzero(m2_diffArray03)
-    m2_numMan04 = np.count_nonzero(m2_diffArray04)
-    m2_numMan05 = np.count_nonzero(m2_diffArray05)
-    m2_numMan06 = np.count_nonzero(m2_diffArray06)
-    m2_numMan07 = np.count_nonzero(m2_diffArray07)
-    m2_numMan08 = np.count_nonzero(m2_diffArray08)
-    m2_numMan09 = np.count_nonzero(m2_diffArray09)
-    m2_numMan10 = np.count_nonzero(m2_diffArray10)
-
+    # if debugMode:
     print('')
-    print('*********** MODEL 1 ************')
-    print('With LC = 0.0: {}'.format(m1_diffList00))
-    print('With LC = 0.1: {}'.format(m1_diffList01))
-    print('With LC = 0.2: {}'.format(m1_diffList02))
-    print('With LC = 0.3: {}'.format(m1_diffList03))
-    print('With LC = 0.4: {}'.format(m1_diffList04))
-    print('With LC = 0.5: {}'.format(m1_diffList05))
-    print('With LC = 0.6: {}'.format(m1_diffList06))
-    print('With LC = 0.7: {}'.format(m1_diffList07))
-    print('With LC = 0.8: {}'.format(m1_diffList08))
-    print('With LC = 0.9: {}'.format(m1_diffList09))
-    print('With LC = 1.0: {}'.format(m1_diffList10))
+    print("MODEL 1: number of manipulations for each LC:")
+    print(m1_numberManList)
     print('')
-    print('With LC = 0.0: {} profiles with beneficial manipulations.'.format(m1_numMan00))
-    print('With LC = 0.1: {} profiles with beneficial manipulations.'.format(m1_numMan01))
-    print('With LC = 0.2: {} profiles with beneficial manipulations.'.format(m1_numMan02))
-    print('With LC = 0.3: {} profiles with beneficial manipulations.'.format(m1_numMan03))
-    print('With LC = 0.4: {} profiles with beneficial manipulations.'.format(m1_numMan04))
-    print('With LC = 0.5: {} profiles with beneficial manipulations.'.format(m1_numMan05))
-    print('With LC = 0.6: {} profiles with beneficial manipulations.'.format(m1_numMan06))
-    print('With LC = 0.7: {} profiles with beneficial manipulations.'.format(m1_numMan07))
-    print('With LC = 0.8: {} profiles with beneficial manipulations.'.format(m1_numMan08))
-    print('With LC = 0.9: {} profiles with beneficial manipulations.'.format(m1_numMan09))
-    print('With LC = 1.0: {} profiles with beneficial manipulations.'.format(m1_numMan10))
+    print("MODEL 2: number of manipulations for each LC:")
+    print(m2_numberManList)
+    print('')
 
-    print('')
-    print('*********** MODEL 2 ************')
-    print('With LC = 0.0: {}'.format(m2_diffList00))
-    print('With LC = 0.1: {}'.format(m2_diffList01))
-    print('With LC = 0.2: {}'.format(m2_diffList02))
-    print('With LC = 0.3: {}'.format(m2_diffList03))
-    print('With LC = 0.4: {}'.format(m2_diffList04))
-    print('With LC = 0.5: {}'.format(m2_diffList05))
-    print('With LC = 0.6: {}'.format(m2_diffList06))
-    print('With LC = 0.7: {}'.format(m2_diffList07))
-    print('With LC = 0.8: {}'.format(m2_diffList08))
-    print('With LC = 0.9: {}'.format(m2_diffList09))
-    print('With LC = 1.0: {}'.format(m2_diffList10))
-    print('')
-    print('With LC = 0.0: {} profiles with beneficial manipulations.'.format(m2_numMan00))
-    print('With LC = 0.1: {} profiles with beneficial manipulations.'.format(m2_numMan01))
-    print('With LC = 0.2: {} profiles with beneficial manipulations.'.format(m2_numMan02))
-    print('With LC = 0.3: {} profiles with beneficial manipulations.'.format(m2_numMan03))
-    print('With LC = 0.4: {} profiles with beneficial manipulations.'.format(m2_numMan04))
-    print('With LC = 0.5: {} profiles with beneficial manipulations.'.format(m2_numMan05))
-    print('With LC = 0.6: {} profiles with beneficial manipulations.'.format(m2_numMan06))
-    print('With LC = 0.7: {} profiles with beneficial manipulations.'.format(m2_numMan07))
-    print('With LC = 0.8: {} profiles with beneficial manipulations.'.format(m2_numMan08))
-    print('With LC = 0.9: {} profiles with beneficial manipulations.'.format(m2_numMan09))
-    print('With LC = 1.0: {} profiles with beneficial manipulations.'.format(m2_numMan10))
-
+    return m1_numberManList, m2_numberManList
 
 #############################################
 # MAIN
@@ -1612,10 +1402,42 @@ def test3_bestManipulationFor912():
 
 
 def test4_simulationModel():
-    simulationModel1(9, 3, 500, 0.05)
+    lcDist = 0.1
+    yValues = simulationModel1(9, 3, 500, lcDist)
+
+    # PLOT
+    plt.figure(figsize=(10, 6), tight_layout=True)
+    # plotting
+    xValues = []
+    for i in range(len(yValues)):
+        xValues.append(i * lcDist)
+    plt.plot(xValues, yValues, 'o-', linewidth=2)
+    # customization
+    plt.xlabel('Lying Cost')
+    plt.ylabel('Number of manipulable profiles')
+    plt.title('Simulation: Manipulable Profiles with varying Lying Cost')
+    plt.show()
 
 def test4_simulationModel1vs2():
-    simulationModel1vs2(9, 3, 500)
+    lcDist = 0.1
+    yValues = simulationModel1vs2(9, 3, 500, lcDist)
+    m1_yValues = yValues[0]
+    m2_yValues = yValues[1]
+
+    # PLOT
+    plt.figure(figsize=(10, 6), tight_layout=True)
+    # plotting
+    xValues = []
+    for i in range(len(m1_yValues)):
+        xValues.append(i * lcDist)
+    plt.plot(xValues, m1_yValues, 'o-', linewidth=2)
+    plt.plot(xValues, m2_yValues, 'x-', linewidth=2)
+    # customization
+    plt.xlabel('Lying Cost')
+    plt.ylabel('Number of manipulable profiles')
+    plt.title('Simulation: Manipulable Profiles with varying Lying Cost')
+    plt.show()
+
 
 ## Choose TEST
 
@@ -1624,4 +1446,5 @@ def test4_simulationModel1vs2():
 #test3_bestManipulationFor14()
 #test3_bestManipulationFor25()
 #test3_bestManipulationFor36()
-test4_simulationModel()
+#test4_simulationModel()
+test4_simulationModel1vs2()
