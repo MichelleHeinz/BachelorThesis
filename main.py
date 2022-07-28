@@ -57,7 +57,7 @@ def prefProfile(n, m, alt):
     #alt = [chr(value) for value in range(ord('a'), ord('a') + (m))]
     #print(alt)
 
-    prefProf.append(['a', 'b', 'c'])
+    prefProf.append(alt)
     for i in range(0, n-1):
         # Take a random shuffle from the alt list and append prefRanking to prefProfile
         prefProf.append(random.sample(alt, len(alt)))
@@ -190,6 +190,8 @@ def computeM(M, myPref):
 
     manMList = []
     distList = []
+    lieList = []
+
     M = np.array(M)
     alt = altList(len(myPref))
     # loop over all permutations of myPref
@@ -212,11 +214,17 @@ def computeM(M, myPref):
         # add manM to list of Manipulated Majority Matrices
         manMList.append(manM)
         dist = kendall_tau_distance(myPref, man, alt)
-        print('')
-        print(M)
-        print('')
-        print("{} Matrix with TruePref: {} and ManPref: {} and dist = {}".format(manM, myPref, man, dist))
-    return manMList, distList
+        if(np.array_equal(myPref, man)):
+            lieList.append(0)
+        else:
+            lieList.append(1)
+        distList.append(dist)
+        # if (debugMode):
+        #     print('')
+        #     print(M)
+        #     print('')
+        #     print("{} Matrix with TruePref: {} and ManPref: {} and dist = {}".format(manM, myPref, man, dist))
+    return manMList, distList, lieList
 
 def kendall_tau_distance(order_a, order_b, alt):
     pairs = itertools.combinations(alt, 2)
@@ -237,50 +245,57 @@ def findBestManipulation(myPref, M, LC1, LC2, uType):
     alt = altList(len(myPref))
     myPrefTemp = myPref.copy()
 
-    ## Compute majority matrix & prefProfile of all 5 possible manipulations
-    #1 Man: abc - acb
-    M1 = M.copy()
-    m1 = swap(myPrefTemp, 1, 2)
-    M1[1, 2] = M1[1, 2] - 2
-    M1[2, 1] = M1[2, 1] + 2
-    dist1 = 1
-    myPrefTemp = myPref.copy()
+    # ## Compute majority matrix & prefProfile of all 5 possible manipulations
+    # #1 Man: abc - acb
+    # M1 = M.copy()
+    # m1 = swap(myPrefTemp, 1, 2)
+    # M1[1, 2] = M1[1, 2] - 2
+    # M1[2, 1] = M1[2, 1] + 2
+    # dist1 = 1
+    # myPrefTemp = myPref.copy()
+    #
+    # #2 Man: abc - bac
+    # M2 = M.copy()
+    # m2 = swap(myPrefTemp, 0, 1)
+    # M2[0, 1] = M2[0, 1] - 2
+    # M2[1, 0] = M2[1, 0] + 2
+    # dist2 = 1
+    # myPrefTemp = myPref.copy()
+    #
+    # #3 Man: abc - bca
+    # M3 = M2.copy()
+    # m3 = swap(m2, 1, 2)
+    # M3[0, 2] = M3[0, 2] - 2
+    # M3[2, 0] = M3[2, 0] + 2
+    # dist3 = 2
+    # myPrefTemp = myPref.copy()
+    #
+    # #4 Man: abc - cab
+    # M4 = M1.copy()
+    # m4 = swap(m1, 0, 1)
+    # M4[0, 2] = M4[0, 2] - 2
+    # M4[2, 0] = M4[2, 0] + 2
+    # dist4 = 2
+    # myPrefTemp = myPref.copy()
+    #
+    # #5 Man: abc - cba
+    # M5 = M4.copy()
+    # m5 = swap(m4, 1, 2)
+    # M5[0, 1] = M5[0, 1] - 2
+    # M5[1, 0] = M5[1, 0] + 2
+    # dist5 = 3
+    # myPrefTemp = myPref.copy()
+    #
+    # mList = [M, M1, M2, M3, M4, M5]
+    # distList = [0, dist1, dist2, dist3, dist4, dist5]
+    # lieList = [0,1,1,1,1,1]
 
-    #2 Man: abc - bac
-    M2 = M.copy()
-    m2 = swap(myPrefTemp, 0, 1)
-    M2[0, 1] = M2[0, 1] - 2
-    M2[1, 0] = M2[1, 0] + 2
-    dist2 = 1
-    myPrefTemp = myPref.copy()
+    mList, distList, lieList = computeM(M, myPref)
+    if debugMode:
+        print("mList: {}".format(mList))
+        print("distList: {}".format(distList))
+        print("lieList: {}".format(lieList))
 
-    #3 Man: abc - bca
-    M3 = M2.copy()
-    m3 = swap(m2, 1, 2)
-    M3[0, 2] = M3[0, 2] - 2
-    M3[2, 0] = M3[2, 0] + 2
-    dist3 = 2
-    myPrefTemp = myPref.copy()
-
-    #4 Man: abc - cab
-    M4 = M1.copy()
-    m4 = swap(m1, 0, 1)
-    M4[0, 2] = M4[0, 2] - 2
-    M4[2, 0] = M4[2, 0] + 2
-    dist4 = 2
-    myPrefTemp = myPref.copy()
-
-    #5 Man: abc - cba
-    M5 = M4.copy()
-    m5 = swap(m4, 1, 2)
-    M5[0, 1] = M5[0, 1] - 2
-    M5[1, 0] = M5[1, 0] + 2
-    dist5 = 3
-    myPrefTemp = myPref.copy()
-
-    mList = [M, M1, M2, M3, M4, M5]
-    distList = [0, dist1, dist2, dist3, dist4, dist5]
-    lieList = [0,1,1,1,1,1]
     ## Compute ML p and check whether the manipulation is beneficial
 
     # compute p
@@ -291,7 +306,7 @@ def findBestManipulation(myPref, M, LC1, LC2, uType):
 
     # compute expectedUtility for all 5 possible manipulations
     eUList = []
-    for i in range(0, len(mList)):
+    for i in range(len(mList)):
         eU = expectedUtility(pList[i], myPref, alt, lieList[i], distList[i], LC1, LC2, uType)
         eUList.append(eU)
 
@@ -299,33 +314,37 @@ def findBestManipulation(myPref, M, LC1, LC2, uType):
         print("** uTrue is {} with p = {} and myPref {}".format(eUList[0], pList[0], myPref))
 
 
-    betterList = [0,0,0,0,0,0]
-    rbetterList = [0,0,0,0,0,0]
+    betterList = [0]
+    rbetterList = [0]
 
     # check: beneficial?
     for i in range(1, len(eUList)):
         if eUList[i] > eUList[0]:
-            betterList[i] = eUList[i] - eUList[0]
+            betterList.append(eUList[i] - eUList[0])
             if eUList[0] > 0:
-                rbetterList[i] = eUList[i] / eUList[0]
+                rbetterList.append(eUList[i] / eUList[0])
             else:
-                rbetterList[i] = 0 #TODO: What then?!
+                rbetterList.append(0) #TODO: What then?!
         else:
-            betterList[i] = 0
-            rbetterList[i] = 0
+            betterList.append(0)
+            rbetterList.append(0)
 
     # print indices of entries in betterList and rbetterlist which are not 0
     successes = []
-    for i in range(1, len(betterList)):
+    for i in range(len(betterList)):
         if not betterList[i] == 0:
             successes.append(i)
     
     successes2 = [i for i, e in enumerate(betterList) if e != 0]
     if not successes == successes2:
         print("ATTENTION ONE OF THE CALCULATIONS IS WRONG")
+        print(successes)
+        print('')
+        print(successes2)
 
     if debugMode:
         print("Successes: {}".format(successes))
+        print(betterList)
 
 
     # check: what is highest absolute gain (difference) in utility?
@@ -502,6 +521,7 @@ def swap(list, pos1, pos2):
 def simulationModel1(n, m, size, lcDist):
 
     alt = altList(m)
+    print(alt)
     # for each prefProfile save how beneficial the best manipulation compared to uTrue is
 
     # create list of lists
@@ -1492,13 +1512,74 @@ def test4_simulationModel1vs2():
     plt.legend()
     plt.show()
 
-def test4_simulationModel1_differentN():
-    lcDist = 0.1
+def test4_simulationModel1_differentN_m3():
+    lcDist = 0.025
     # PLOT
     plt.figure(figsize=(10, 6), tight_layout=True)
     # plot for increasing n
     for n in range(3, 10):
         yValues = simulationModel1(n, 3, 2000, lcDist)
+        # plotting
+        xValues = []
+        for i in range(len(yValues)):
+            xValues.append(i * lcDist)
+        plt.plot(xValues, yValues, 'o-', linewidth=2, label = 'n = ' + str(n))
+
+    # customization
+    plt.xlabel('Lying Cost')
+    plt.ylabel('Number of manipulable profiles')
+    plt.title('Simulation: Manipulable Profiles with varying Lying Cost')
+    plt.legend()
+    plt.show()
+
+def test4_simulationModel1_differentN_m4():
+    lcDist = 0.025
+    # PLOT
+    plt.figure(figsize=(10, 6), tight_layout=True)
+    # plot for increasing n
+    for n in range(3, 10):
+        yValues = simulationModel1(n, 4, 2000, lcDist)
+        # plotting
+        xValues = []
+        for i in range(len(yValues)):
+            xValues.append(i * lcDist)
+        plt.plot(xValues, yValues, 'o-', linewidth=2, label = 'n = ' + str(n))
+
+    # customization
+    plt.xlabel('Lying Cost')
+    plt.ylabel('Number of manipulable profiles')
+    plt.title('Simulation: Manipulable Profiles with varying Lying Cost')
+    plt.legend()
+    plt.show()
+
+def test4_simulationModel1_differentN_m5():
+    lcDist = 0.025
+    # PLOT
+    plt.figure(figsize=(10, 6), tight_layout=True)
+    # plot for increasing n
+    for n in range(3, 10):
+        yValues = simulationModel1(n, 5, 1000, lcDist)
+        # plotting
+        xValues = []
+        for i in range(len(yValues)):
+            xValues.append(i * lcDist)
+        plt.plot(xValues, yValues, 'o-', linewidth=2, label = 'n = ' + str(n))
+
+    # customization
+    plt.xlabel('Lying Cost')
+    plt.ylabel('Number of manipulable profiles')
+    plt.title('Simulation: Manipulable Profiles with varying Lying Cost')
+    plt.legend()
+    plt.show()
+
+
+def test4_simulationModel1_differentN_m7():
+    lcDist = 0.025
+    # PLOT
+    plt.figure(figsize=(10, 6), tight_layout=True)
+    # plot for increasing n
+    for n in range(3, 10):
+        yValues = simulationModel1(n, 7, 1000, lcDist)
         # plotting
         xValues = []
         for i in range(len(yValues)):
@@ -1535,5 +1616,5 @@ def test5_computeM():
 #test3_bestManipulationFor36()
 #test4_simulationModel()
 #test4_simulationModel1vs2()
-#test4_simulationModel1_differentN()
-test5_computeM()
+#test4_simulationModel1_differentN_m5()
+#test5_computeM()
